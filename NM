@@ -1,0 +1,54 @@
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import linear_kernel
+
+# Load data
+movies = pd.read_csv("data/movies.csv")
+
+# Fill NaNs and create TF-IDF matrix
+movies['genres'] = movies['genres'].fillna('')
+tfidf = TfidfVectorizer(stop_words='english')
+tfidf_matrix = tfidf.fit_transform(movies['genres'])
+
+# Compute cosine similarity
+cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
+
+# Build reverse map of indices
+indices = pd.Series(movies.index, index=movies['title']).drop_duplicates()
+
+def get_recommendations(title, n=10):
+    idx = indices.get(title)
+    if idx is None:
+        return []
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:n+1]
+    movie_indices = [i[0] for i in sim_scores]
+    return movies['title'].iloc[movie_indices].tolist()
+import pandas as pd
+from surprise import Dataset, Reader, SVD
+from surprise.model_selection import train_test_split
+
+# Load data
+ratings = pd.read_csv("data/ratings.csv")
+
+# Prepare data for Surprise
+reader = Reader(rating_scale=(0.5, 5.0))
+data = Dataset.load_from_df(ratings[['userId', 'movieId', 'rating']], reader)
+
+trainset, testset = train_test_split(data, test_size=0.2)
+
+# Train model
+model = SVD()
+model.fit(trainset)
+
+def predict_rating(user_id, movie_id):
+    prediction = model.predict(user_id, movie_id)
+    return prediction.est
+
+def get_top_recommendations(user_id, movies, n=10):
+    movie_ids = movies['movieId'].unique()
+    predictions = [(movie_id, predict_rating(user_id, movie_id)) for movie_id in movie_ids]
+    predictions.sort(key=lambda x: x[1], reverse=True)
+    top_movies = [movies[movies['movieId'] == pid]['title'].values[0] for pid, _ in predictions[:n]]
+    return top_movies
+
