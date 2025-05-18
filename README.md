@@ -1,55 +1,76 @@
 # Movie-Recommendation-System
-import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import linear_kernel
 
-# Load data
-movies = pd.read_csv("data/movies.csv")
+![ML](https://img.shields.io/badge/ML-Recommendation_System-blue.svg) 
 
-# Fill NaNs and create TF-IDF matrix
-movies['genres'] = movies['genres'].fillna('')
-tfidf = TfidfVectorizer(stop_words='english')
-tfidf_matrix = tfidf.fit_transform(movies['genres'])
+![logo](Snips/Logo.jpeg)
 
-# Compute cosine similarity
-cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
+## Business Objectives :
 
-# Build reverse map of indices
-indices = pd.Series(movies.index, index=movies['title']).drop_duplicates()
+All entertainment websites or online stores have millions/billions of items. It becomes challenging for the customer to select the right one. At this place, recommender systems come into the picture and help the user to find the right item by minimizing the options.
 
-def get_recommendations(title, n=10):
-    idx = indices.get(title)
-    if idx is None:
-        return []
-    sim_scores = list(enumerate(cosine_sim[idx]))
-    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)[1:n+1]
-    movie_indices = [i[0] for i in sim_scores]
-    return movies['title'].iloc[movie_indices].tolist()
-import pandas as pd
-from surprise import Dataset, Reader, SVD
-from surprise.model_selection import train_test_split
+Recommendation Systems in the world of machine learning have become very popular and are a huge advantage to tech giants like Netflix, Amazon and many more to target their content to a specific audience. These recommendation engines are so strong in their predictions that they can dynamically alter the state of what the user sees on their page based on the user’s interaction with the app.
 
-# Load data
-ratings = pd.read_csv("data/ratings.csv")
+The business objective for us is: 
+1. To create a Collaborative Filtering based Movie Recommendation System
+2. Predict the rating that a user would give to a movie that he has not yet rated
+3. Minimize the difference between predicted and actual rating (RMSE and MAPE)
 
-# Prepare data for Surprise
-reader = Reader(rating_scale=(0.5, 5.0))
-data = Dataset.load_from_df(ratings[['userId', 'movieId', 'rating']], reader)
+## Data Collection :
 
-trainset, testset = train_test_split(data, test_size=0.2)
+The dataset has been obtained from Grouplens.
 
-# Train model
-model = SVD()
-model.fit(trainset)
+Link : https://grouplens.org/datasets/movielens/20m/
 
-def predict_rating(user_id, movie_id):
-    prediction = model.predict(user_id, movie_id)
-    return prediction.est
+This dataset (ml-20m) describes 5-star rating and free-text tagging activity from MovieLens, a movie recommendation service. It contains 20000263 ratings and 465564 tag applications across 27278 movies. These data were created by 138493 users between January 09, 1995 and March 31, 2015. This dataset was generated on October 17, 2016.
 
-def get_top_recommendations(user_id, movies, n=10):
-    movie_ids = movies['movieId'].unique()
-    predictions = [(movie_id, predict_rating(user_id, movie_id)) for movie_id in movie_ids]
-    predictions.sort(key=lambda x: x[1], reverse=True)
-    top_movies = [movies[movies['movieId'] == pid]['title'].values[0] for pid, _ in predictions[:n]]
-    return top_movies
+Users were selected at random for inclusion. All selected users had rated at least 20 movies. No demographic information is included. Each user is represented by an id, and no other information is provided.
 
+The data are contained in the files genome-scores.csv, genome-tags.csv, links.csv, movies.csv, ratings.csv and tags.csv. 
+
+For our objective, we would be using "ratings.csv" and "movies.csv" data files.
+
+## Modelling :
+
+The following modelling approach was used in the project:
+
+1. Loading & exploring the Movie and User ratings data
+2. Creating User-Item Matrix, User-User and Item-Item similarity matrices for Movie Recommendations
+3. Creating feature and applying ML models to predict the ratings for unseen movies for a user
+
+The detailed analysis and model creation can be found in the .ipynb file. 
+
+## Result :
+
+Some of the test images are given below.
+
+The results from Movie-Movie Similarity is as below:
+
+![test](Snips/M_1.JPG)
+
+The results from User-User Similarity is as below:
+
+![test](Snips/M_2.JPG)
+
+The Feature Importance for predicting ratings is as below:
+
+![test](Snips/M_3.JPG)
+
+The results from different ML models are as follows:
+
+![test](Snips/M_4.JPG)
+
+The sample movie recommendation based on Collaborative Filtering is as follows:
+
+![test](Snips/M_5.JPG)
+
+## Conclusions :
+
+In this project, we learned the importance of Recommendation Systems, the types of recommender systems being implemented, and how to use matrix factorization to enhance a system. 
+
+We then built a movie recommendation system that considers user-user similarity, movie-movie similarity, global averages and matrix factorization. These concepts can be applied to any other user-item interactions systems.
+
+We tried generating recommendations based on similarity matrix and Collaborative Filtering techniques.
+
+We tried to predict the ratings for movies that the user might give based on its past rating behaviours and measure the accuracy using RMSE and MAPE error metrics.
+
+Surely, there is huge scope of improvement and tring out different techniques and ML/DL algorithms.
